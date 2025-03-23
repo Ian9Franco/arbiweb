@@ -32,16 +32,16 @@ export function TradeHistory({ className }: TradeHistoryProps) {
     const loadData = async () => {
       try {
         const data = await fetchTradeHistory()
-        setTrades(data.slice(-10).reverse()) // Get the 10 most recent trades
+        setTrades(data.slice(-10).reverse()) // Obtener las 10 operaciones más recientes
       } catch (error) {
-        console.error("Error loading trade history:", error)
+        console.error("Error al cargar historial de operaciones:", error)
       } finally {
         setLoading(false)
       }
     }
 
     loadData()
-    // Poll for updates every 30 seconds
+    // Actualizar datos cada 30 segundos
     const interval = setInterval(loadData, 30000)
     return () => clearInterval(interval)
   }, [])
@@ -49,13 +49,13 @@ export function TradeHistory({ className }: TradeHistoryProps) {
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Recent Trades</CardTitle>
-        <CardDescription>Latest arbitrage trades executed by the bot</CardDescription>
+        <CardTitle>Operaciones Recientes</CardTitle>
+        <CardDescription>Últimas operaciones de arbitraje ejecutadas por el bot</CardDescription>
       </CardHeader>
       <CardContent>
         {loading ? (
           <div className="flex h-[300px] items-center justify-center">
-            <p className="text-sm text-muted-foreground">Loading trade history...</p>
+            <p className="text-sm text-muted-foreground">Cargando historial de operaciones...</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -74,15 +74,15 @@ export function TradeHistory({ className }: TradeHistoryProps) {
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Buy: ${trade.buy_trade.price.toFixed(2)} | Sell: ${trade.sell_trade.price.toFixed(2)} |
-                    {(trade.profit_percentage * 100).toFixed(2)}% profit
+                    Compra: ${trade.buy_trade.price.toFixed(2)} | Venta: ${trade.sell_trade.price.toFixed(2)} |
+                    {(trade.profit_percentage * 100).toFixed(2)}% beneficio
                   </div>
                   <div className="text-xs text-muted-foreground">{new Date(trade.timestamp).toLocaleString()}</div>
                 </div>
               ))
             ) : (
               <div className="flex h-[200px] items-center justify-center">
-                <p className="text-sm text-muted-foreground">No trade history available</p>
+                <p className="text-sm text-muted-foreground">No hay historial de operaciones disponible</p>
               </div>
             )}
           </div>

@@ -15,7 +15,7 @@ export function DashboardCards() {
     asset_balance: 10,
   })
   // Estado para controlar la carga de datos
-  const [_loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
 
   // Efecto para cargar las estadísticas al montar el componente
   useEffect(() => {
@@ -43,7 +43,7 @@ export function DashboardCards() {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {_loading ? (
+      {loading ? (
         // Mostrar esqueletos de carga
         <>
           <Card className="animate-pulse">

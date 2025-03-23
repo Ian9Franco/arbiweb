@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,11 +8,14 @@ import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Info, AlertCircle } from "lucide-react"
+import { Info, AlertCircle, RefreshCw } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface Exchange {
   name: string
-  price: number
+  prices: {
+    [key: string]: number
+  }
   volatility: number
 }
 
@@ -25,33 +28,99 @@ interface SimulationResult {
   profit: number
   profitPercentage: number
   timestamp: string
+  crypto: string
+}
+
+// Tipos de criptomonedas disponibles
+const CRYPTO_TYPES = [
+  { id: "BTC", name: "Bitcoin", basePrice: 50000 },
+  { id: "ETH", name: "Ethereum", basePrice: 3000 },
+  { id: "USDT", name: "Tether", basePrice: 1 },
+]
+
+// Función para obtener precios simulados de API (en una app real, esto sería una llamada fetch)
+const fetchCryptoPrices = async () => {
+  // Simulamos una llamada a API con un pequeño retraso
+  await new Promise((resolve) => setTimeout(resolve, 500))
+
+  // Generamos precios simulados para cada criptomoneda
+  const prices: Record<string, Record<string, number>> = {}
+
+  CRYPTO_TYPES.forEach((crypto) => {
+    const basePrice = crypto.basePrice
+    prices[crypto.id] = {
+      Binance: basePrice * (1 + (Math.random() - 0.5) * 0.02),
+      Coinbase: basePrice * (1 + (Math.random() - 0.5) * 0.02),
+      Kraken: basePrice * (1 + (Math.random() - 0.5) * 0.02),
+      Huobi: basePrice * (1 + (Math.random() - 0.5) * 0.02),
+      FTX: basePrice * (1 + (Math.random() - 0.5) * 0.02),
+    }
+  })
+
+  return prices
 }
 
 export function SimulationSection() {
   // Estado para los exchanges
   const [exchanges, setExchanges] = useState<Exchange[]>([
-    { name: "Binance", price: 50000, volatility: 0.02 },
-    { name: "Coinbase", price: 50100, volatility: 0.025 },
-    { name: "Kraken", price: 49900, volatility: 0.03 },
+    { name: "Binance", prices: { BTC: 50000, ETH: 3000, USDT: 1 }, volatility: 0.02 },
+    { name: "Coinbase", prices: { BTC: 50100, ETH: 3010, USDT: 1 }, volatility: 0.025 },
+    { name: "Kraken", prices: { BTC: 49900, ETH: 2990, USDT: 1 }, volatility: 0.03 },
+    { name: "Huobi", prices: { BTC: 50050, ETH: 3005, USDT: 1 }, volatility: 0.02 },
+    { name: "FTX", prices: { BTC: 49950, ETH: 2995, USDT: 1 }, volatility: 0.025 },
   ])
 
   // Estado para la configuración de la simulación
+  const [selectedCrypto, setSelectedCrypto] = useState("BTC")
   const [amount, setAmount] = useState(1.0)
+  const [investmentAmount, setInvestmentAmount] = useState(1000)
   const [threshold, setThreshold] = useState(0.5)
 
   // Estado para los resultados de la simulación
   const [results, setResults] = useState<SimulationResult[]>([])
-  const [balance, setBalance] = useState(1000)
-  const [assets, setAssets] = useState(0)
+  const [balance, setBalance] = useState(10000)
+  const [assets, setAssets] = useState<Record<string, number>>({ BTC: 0, ETH: 0, USDT: 0 })
   const [isSimulating, setIsSimulating] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const [showAlert, setShowAlert] = useState(false)
+  const [alertMessage, setAlertMessage] = useState("")
 
-  // Función para actualizar el precio de un exchange
-  const updateExchangePrice = (index: number, newPrice: number) => {
-    const updatedExchanges = [...exchanges]
-    updatedExchanges[index].price = newPrice
-    setExchanges(updatedExchanges)
+  // Función para actualizar precios desde la "API"
+  const updatePricesFromAPI = async () => {
+    setIsLoading(true)
+    try {
+      const prices = await fetchCryptoPrices()
+
+      // Actualizar precios en los exchanges
+      setExchanges((prevExchanges) =>
+        prevExchanges.map((exchange) => ({
+          ...exchange,
+          prices: {
+            BTC: prices["BTC"][exchange.name] || exchange.prices["BTC"],
+            ETH: prices["ETH"][exchange.name] || exchange.prices["ETH"],
+            USDT: prices["USDT"][exchange.name] || exchange.prices["USDT"],
+          },
+        })),
+      )
+    } catch (error) {
+      console.error("Error al obtener precios:", error)
+      setAlertMessage("Error al obtener precios actualizados")
+      setShowAlert(true)
+    } finally {
+      setIsLoading(false)
+    }
   }
+
+  // Actualizar precios al cargar y cada 30 segundos
+  useEffect(() => {
+    updatePricesFromAPI()
+
+    const interval = setInterval(() => {
+      updatePricesFromAPI()
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   // Función para actualizar la volatilidad de un exchange
   const updateExchangeVolatility = (index: number, newVolatility: number) => {
@@ -60,23 +129,36 @@ export function SimulationSection() {
     setExchanges(updatedExchanges)
   }
 
+  // Calcular cuántas unidades de cripto se pueden comprar con el monto de inversión
+  const calculateCryptoAmount = (exchangeIndex: number) => {
+    const exchange = exchanges[exchangeIndex]
+    const price = exchange.prices[selectedCrypto]
+    return investmentAmount / price
+  }
+
   // Función para simular una operación de arbitraje
   const simulateArbitrage = () => {
     setIsSimulating(true)
 
     // Simular fluctuaciones de precio
     const updatedExchanges = exchanges.map((exchange) => {
-      const priceChange = (Math.random() - 0.5) * 2 * exchange.volatility
-      const newPrice = exchange.price * (1 + priceChange)
+      const updatedPrices: Record<string, number> = {}
+
+      // Actualizar cada criptomoneda
+      Object.entries(exchange.prices).forEach(([crypto, price]) => {
+        const priceChange = (Math.random() - 0.5) * 2 * exchange.volatility
+        updatedPrices[crypto] = Number.parseFloat((price * (1 + priceChange)).toFixed(crypto === "USDT" ? 4 : 2))
+      })
+
       return {
         ...exchange,
-        price: Number.parseFloat(newPrice.toFixed(2)),
+        prices: updatedPrices,
       }
     })
 
     setExchanges(updatedExchanges)
 
-    // Buscar oportunidades de arbitraje
+    // Buscar oportunidades de arbitraje para la criptomoneda seleccionada
     let bestOpportunity = null
     let maxProfitPercentage = 0
 
@@ -87,15 +169,18 @@ export function SimulationSection() {
         const buyExchange = updatedExchanges[i]
         const sellExchange = updatedExchanges[j]
 
-        const profitPercentage = ((sellExchange.price - buyExchange.price) / buyExchange.price) * 100
+        const buyPrice = buyExchange.prices[selectedCrypto]
+        const sellPrice = sellExchange.prices[selectedCrypto]
+
+        const profitPercentage = ((sellPrice - buyPrice) / buyPrice) * 100
 
         if (profitPercentage > threshold && profitPercentage > maxProfitPercentage) {
           maxProfitPercentage = profitPercentage
           bestOpportunity = {
             buyExchange: buyExchange.name,
             sellExchange: sellExchange.name,
-            buyPrice: buyExchange.price,
-            sellPrice: sellExchange.price,
+            buyPrice: buyPrice,
+            sellPrice: sellPrice,
             profitPercentage: profitPercentage,
           }
         }
@@ -104,19 +189,22 @@ export function SimulationSection() {
 
     // Si se encontró una oportunidad, ejecutar la operación
     if (bestOpportunity) {
-      const cost = bestOpportunity.buyPrice * amount
+      // Calcular cuántas unidades de cripto podemos comprar con el monto de inversión
+      const cryptoAmount = investmentAmount / bestOpportunity.buyPrice
 
       // Verificar si hay suficiente saldo
-      if (cost > balance) {
+      if (investmentAmount > balance) {
+        setAlertMessage("No tienes suficiente saldo para esta operación")
         setShowAlert(true)
         setIsSimulating(false)
         return
       }
 
-      const revenue = bestOpportunity.sellPrice * amount
+      const cost = bestOpportunity.buyPrice * cryptoAmount
+      const revenue = bestOpportunity.sellPrice * cryptoAmount
       const profit = revenue - cost
 
-      // Actualizar saldo y activos
+      // Actualizar saldo
       setBalance((prevBalance) => Number.parseFloat((prevBalance - cost + revenue).toFixed(2)))
 
       // Registrar la operación
@@ -125,13 +213,17 @@ export function SimulationSection() {
         sellExchange: bestOpportunity.sellExchange,
         buyPrice: bestOpportunity.buyPrice,
         sellPrice: bestOpportunity.sellPrice,
-        amount: amount,
+        amount: cryptoAmount,
         profit: Number.parseFloat(profit.toFixed(2)),
         profitPercentage: Number.parseFloat(bestOpportunity.profitPercentage.toFixed(2)),
         timestamp: new Date().toISOString(),
+        crypto: selectedCrypto,
       }
 
       setResults((prevResults) => [newResult, ...prevResults].slice(0, 5))
+    } else {
+      setAlertMessage("No se encontraron oportunidades de arbitraje que superen el umbral establecido")
+      setShowAlert(true)
     }
 
     setIsSimulating(false)
@@ -140,29 +232,83 @@ export function SimulationSection() {
   // Función para comprar activos directamente
   const buyAssets = (exchangeIndex: number) => {
     const exchange = exchanges[exchangeIndex]
-    const cost = exchange.price * amount
+    const price = exchange.prices[selectedCrypto]
+    const cryptoAmount = calculateCryptoAmount(exchangeIndex)
 
-    if (cost > balance) {
+    if (investmentAmount > balance) {
+      setAlertMessage("No tienes suficiente saldo para esta compra")
       setShowAlert(true)
       return
     }
 
-    setBalance((prevBalance) => Number.parseFloat((prevBalance - cost).toFixed(2)))
-    setAssets((prevAssets) => Number.parseFloat((prevAssets + amount).toFixed(4)))
+    // Actualizar saldo y activos
+    setBalance((prevBalance) => Number.parseFloat((prevBalance - investmentAmount).toFixed(2)))
+    setAssets((prevAssets) => ({
+      ...prevAssets,
+      [selectedCrypto]: Number.parseFloat(
+        (prevAssets[selectedCrypto] + cryptoAmount).toFixed(selectedCrypto === "USDT" ? 2 : 6),
+      ),
+    }))
+
+    // Registrar la operación
+    const newResult: SimulationResult = {
+      buyExchange: exchange.name,
+      sellExchange: "",
+      buyPrice: price,
+      sellPrice: 0,
+      amount: cryptoAmount,
+      profit: 0,
+      profitPercentage: 0,
+      timestamp: new Date().toISOString(),
+      crypto: selectedCrypto,
+    }
+
+    setResults((prevResults) => [newResult, ...prevResults].slice(0, 5))
   }
 
   // Función para vender activos directamente
   const sellAssets = (exchangeIndex: number) => {
     const exchange = exchanges[exchangeIndex]
+    const price = exchange.prices[selectedCrypto]
+    const cryptoAmount = calculateCryptoAmount(exchangeIndex)
 
-    if (amount > assets) {
+    if (cryptoAmount > assets[selectedCrypto]) {
+      setAlertMessage(`No tienes suficiente ${selectedCrypto} para esta venta`)
       setShowAlert(true)
       return
     }
 
-    const revenue = exchange.price * amount
+    const revenue = price * cryptoAmount
+
+    // Actualizar saldo y activos
     setBalance((prevBalance) => Number.parseFloat((prevBalance + revenue).toFixed(2)))
-    setAssets((prevAssets) => Number.parseFloat((prevAssets - amount).toFixed(4)))
+    setAssets((prevAssets) => ({
+      ...prevAssets,
+      [selectedCrypto]: Number.parseFloat(
+        (prevAssets[selectedCrypto] - cryptoAmount).toFixed(selectedCrypto === "USDT" ? 2 : 6),
+      ),
+    }))
+
+    // Registrar la operación
+    const newResult: SimulationResult = {
+      buyExchange: "",
+      sellExchange: exchange.name,
+      buyPrice: 0,
+      sellPrice: price,
+      amount: cryptoAmount,
+      profit: revenue - investmentAmount,
+      profitPercentage: ((revenue - investmentAmount) / investmentAmount) * 100,
+      timestamp: new Date().toISOString(),
+      crypto: selectedCrypto,
+    }
+
+    setResults((prevResults) => [newResult, ...prevResults].slice(0, 5))
+  }
+
+  // Función para formatear precios según la criptomoneda
+  const formatPrice = (price: number, crypto: string) => {
+    if (crypto === "USDT") return price.toFixed(4)
+    return price.toFixed(2)
   }
 
   return (
@@ -180,24 +326,44 @@ export function SimulationSection() {
             </TabsList>
 
             <TabsContent value="exchanges" className="space-y-4">
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm font-medium">Precios en tiempo real</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={updatePricesFromAPI}
+                  disabled={isLoading}
+                  className="flex items-center gap-1"
+                >
+                  <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+                  Actualizar
+                </Button>
+              </div>
+
               {exchanges.map((exchange, index) => (
                 <div key={index} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <Label>{exchange.name}</Label>
-                    <div className="text-sm font-medium">${exchange.price.toFixed(2)}</div>
+                    <div className="text-sm font-medium">
+                      ${formatPrice(exchange.prices[selectedCrypto], selectedCrypto)}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-xs">Precio ($)</Label>
-                      <Input
-                        type="number"
-                        value={exchange.price}
-                        onChange={(e) => updateExchangePrice(index, Number.parseFloat(e.target.value))}
-                        min={1000}
-                        max={100000}
-                        step={100}
-                      />
+                      <Label className="text-xs">Criptomoneda</Label>
+                      <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Seleccionar criptomoneda" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {CRYPTO_TYPES.map((crypto) => (
+                            <SelectItem key={crypto.id} value={crypto.id}>
+                              {crypto.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
@@ -230,17 +396,41 @@ export function SimulationSection() {
             <TabsContent value="parameters" className="space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label>Cantidad a operar</Label>
-                  <span className="text-sm font-medium">{amount} BTC</span>
+                  <Label>Criptomoneda</Label>
+                  <span className="text-sm font-medium">{CRYPTO_TYPES.find((c) => c.id === selectedCrypto)?.name}</span>
+                </div>
+                <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Seleccionar criptomoneda" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CRYPTO_TYPES.map((crypto) => (
+                      <SelectItem key={crypto.id} value={crypto.id}>
+                        {crypto.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Monto a invertir (USD)</Label>
+                  <span className="text-sm font-medium">${investmentAmount}</span>
                 </div>
                 <Input
                   type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(Number.parseFloat(e.target.value))}
-                  min={0.01}
-                  max={10}
-                  step={0.01}
+                  value={investmentAmount}
+                  onChange={(e) => setInvestmentAmount(Number.parseFloat(e.target.value))}
+                  min={10}
+                  max={100000}
+                  step={10}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Aproximadamente{" "}
+                  {(investmentAmount / exchanges[0].prices[selectedCrypto]).toFixed(selectedCrypto === "USDT" ? 2 : 6)}{" "}
+                  {selectedCrypto}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -272,7 +462,7 @@ export function SimulationSection() {
             <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
-              <AlertDescription>No tienes suficiente saldo o activos para esta operación.</AlertDescription>
+              <AlertDescription>{alertMessage}</AlertDescription>
               <Button variant="ghost" size="sm" className="mt-2" onClick={() => setShowAlert(false)}>
                 Cerrar
               </Button>
@@ -294,7 +484,14 @@ export function SimulationSection() {
             </div>
             <div className="rounded-lg border p-3">
               <div className="text-sm font-medium text-muted-foreground">Activos</div>
-              <div className="text-2xl font-bold">{assets.toFixed(4)} BTC</div>
+              <div className="space-y-1">
+                {Object.entries(assets).map(([crypto, amount]) => (
+                  <div key={crypto} className="flex justify-between items-center">
+                    <span className="text-sm">{crypto}:</span>
+                    <span className="text-sm font-medium">{amount.toFixed(crypto === "USDT" ? 2 : 6)}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -306,16 +503,34 @@ export function SimulationSection() {
                 <div key={index} className="rounded-lg border p-3 space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="font-medium">
-                      {result.buyExchange} → {result.sellExchange}
+                      {result.buyExchange && result.sellExchange
+                        ? `${result.buyExchange} → ${result.sellExchange}`
+                        : result.buyExchange
+                          ? `Compra en ${result.buyExchange}`
+                          : `Venta en ${result.sellExchange}`}
                     </div>
-                    <div className={result.profit > 0 ? "text-green-500" : "text-red-500"}>
+                    <div
+                      className={
+                        result.profit > 0
+                          ? "text-green-500"
+                          : result.profit < 0
+                            ? "text-red-500"
+                            : "text-muted-foreground"
+                      }
+                    >
                       {result.profit > 0 ? "+" : ""}
                       {result.profit.toFixed(2)} USD
                     </div>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Compra: ${result.buyPrice.toFixed(2)} | Venta: ${result.sellPrice.toFixed(2)} |
-                    {result.profitPercentage.toFixed(2)}% beneficio
+                    {result.amount.toFixed(result.crypto === "USDT" ? 2 : 6)} {result.crypto}
+                    {result.buyExchange && result.sellExchange && (
+                      <>
+                        {" "}
+                        | ${result.buyPrice.toFixed(2)} → ${result.sellPrice.toFixed(2)} |{" "}
+                        {result.profitPercentage.toFixed(2)}% beneficio
+                      </>
+                    )}
                   </div>
                   <div className="text-xs text-muted-foreground">{new Date(result.timestamp).toLocaleString()}</div>
                 </div>

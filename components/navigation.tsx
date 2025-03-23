@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { LayoutDashboard, ArrowUpDown, BookOpen, Settings, PlayCircle } from "lucide-react"
+import { LayoutDashboard, ArrowUpDown, BookOpen, Settings, PlayCircle, Bot } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavigationProps {
@@ -18,6 +18,7 @@ export function Navigation({ className }: NavigationProps) {
       trades: document.getElementById("trades"),
       simulation: document.getElementById("simulation"),
       documentation: document.getElementById("documentation"),
+      bot: document.getElementById("bot"),
       settings: document.getElementById("settings"),
     }
 
@@ -124,6 +125,20 @@ export function Navigation({ className }: NavigationProps) {
         Documentación
       </a>
       <a
+        href="#bot"
+        onClick={(e) => {
+          e.preventDefault()
+          scrollToSection("bot")
+        }}
+        className={cn(
+          "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:text-primary",
+          activeSection === "bot" ? "bg-muted text-primary" : "text-muted-foreground",
+        )}
+      >
+        <Bot className="h-4 w-4" />
+        Bot de Arbitraje
+      </a>
+      <a
         href="#settings"
         onClick={(e) => {
           e.preventDefault()
@@ -135,7 +150,7 @@ export function Navigation({ className }: NavigationProps) {
         )}
       >
         <Settings className="h-4 w-4" />
-        Configuración
+        Preferencias
       </a>
     </nav>
   )

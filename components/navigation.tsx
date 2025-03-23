@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { LayoutDashboard, ArrowUpDown, BookOpen, Settings } from "lucide-react"
+import { LayoutDashboard, ArrowUpDown, BookOpen, Settings, PlayCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface NavigationProps {
@@ -16,6 +16,7 @@ export function Navigation({ className }: NavigationProps) {
     const sections = {
       dashboard: document.getElementById("dashboard"),
       trades: document.getElementById("trades"),
+      simulation: document.getElementById("simulation"),
       documentation: document.getElementById("documentation"),
       settings: document.getElementById("settings"),
     }
@@ -93,6 +94,20 @@ export function Navigation({ className }: NavigationProps) {
       >
         <ArrowUpDown className="h-4 w-4" />
         Operaciones
+      </a>
+      <a
+        href="#simulation"
+        onClick={(e) => {
+          e.preventDefault()
+          scrollToSection("simulation")
+        }}
+        className={cn(
+          "flex items-center gap-2 rounded-lg px-3 py-2 transition-all hover:text-primary",
+          activeSection === "simulation" ? "bg-muted text-primary" : "text-muted-foreground",
+        )}
+      >
+        <PlayCircle className="h-4 w-4" />
+        Simulador
       </a>
       <a
         href="#documentation"

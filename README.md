@@ -1,38 +1,40 @@
-# ArbiWeb - Arbitrage Trading Dashboard
+# ArbiWeb - Panel de Control de Arbitraje
 
-A Next.js web interface for visualizing and monitoring the ArbiPy arbitrage trading bot.
+Una interfaz web basada en Next.js para visualizar y monitorear el bot de arbitraje ArbiPy.
 
-## Overview
+## Descripción General
 
-ArbiWeb is a modern web dashboard built with Next.js and TailwindCSS that provides real-time visualization of arbitrage trading data from the ArbiPy bot. It displays trade history, statistics, and interactive charts to help monitor trading performance.
+ArbiWeb es un panel de control moderno construido con Next.js y TailwindCSS que proporciona visualización en tiempo real de datos de trading de arbitraje del bot ArbiPy. Muestra historial de operaciones, estadísticas y gráficos interactivos para ayudar a monitorear el rendimiento del trading.
 
-## Features
+## Características
 
-- Real-time dashboard with key performance metrics
-- Interactive charts for profit tracking and exchange price comparison
-- Trade history and arbitrage opportunity analysis
-- Responsive design for desktop and mobile
-- Dark mode support
+- Panel de control en tiempo real con métricas clave de rendimiento
+- Gráficos interactivos para seguimiento de beneficios y comparación de precios entre exchanges
+- Historial de operaciones y análisis de oportunidades de arbitraje
+- Simulador interactivo para aprender sobre arbitraje
+- Diseño responsive para escritorio y móvil
+- Soporte para modo oscuro
 
-## Tech Stack
+## Stack Tecnológico
 
 - Next.js 14 (App Router)
-- TailwindCSS for styling
-- shadcn/ui for UI components
-- Recharts for data visualization
-- API routes for data fetching
+- TailwindCSS para estilos
+- shadcn/ui para componentes de UI
+- Recharts para visualización de datos
+- Rutas API para obtención de datos
 
-## Getting Started
+## Primeros Pasos
 
-### Prerequisites
+### Requisitos Previos
 
-- Node.js 18+ and npm/yarn
-- ArbiPy bot running and generating data (optional)
+- Node.js 18+ y npm/yarn
+- Bot ArbiPy ejecutándose y generando datos (opcional)
 
-### Installation
+### Instalación
 
 ```bash
-git clone https://github.com/yourusername/arbiweb.git
+git clone https://github.com/tuusuario/arbiweb.git
 cd arbiweb
 npm install
+npm run dev
 

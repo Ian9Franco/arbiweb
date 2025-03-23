@@ -8,6 +8,7 @@ import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardCards } from "@/components/dashboard-cards"
 import { LoadingDashboard } from "@/components/loading-dashboard"
 import { Navigation } from "@/components/navigation"
+import { SimulationSection } from "@/components/simulation-section"
 
 export default function DashboardPage() {
   return (
@@ -22,15 +23,15 @@ export default function DashboardPage() {
           <DashboardHeader />
           <DashboardShell>
             <Suspense fallback={<LoadingDashboard />}>
-              <section id="dashboard">
+              <section id="dashboard" className="mb-10">
                 <DashboardCards />
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 mt-6">
                   <ProfitChart className="md:col-span-2 lg:col-span-4" />
                   <ArbitrageStats className="md:col-span-2 lg:col-span-3" />
                 </div>
               </section>
 
-              <section id="trades" className="mt-10">
+              <section id="trades" className="mb-10">
                 <h2 className="text-2xl font-bold tracking-tight">Operaciones</h2>
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 mt-4">
                   <ExchangePriceChart className="md:col-span-2 lg:col-span-4" />
@@ -38,7 +39,15 @@ export default function DashboardPage() {
                 </div>
               </section>
 
-              <section id="documentation" className="mt-10">
+              <section id="simulation" className="mb-10">
+                <h2 className="text-2xl font-bold tracking-tight">Simulador de Arbitraje</h2>
+                <p className="text-muted-foreground mt-1 mb-4">
+                  Aprende cómo funciona el arbitraje simulando operaciones entre diferentes exchanges
+                </p>
+                <SimulationSection />
+              </section>
+
+              <section id="documentation" className="mb-10">
                 <h2 className="text-2xl font-bold tracking-tight">Documentación</h2>
                 <div className="mt-4 rounded-lg border bg-card p-6">
                   <h3 className="text-lg font-medium">Cómo funciona el Bot de Arbitraje</h3>
@@ -73,7 +82,7 @@ export default function DashboardPage() {
                 </div>
               </section>
 
-              <section id="settings" className="mt-10 mb-10">
+              <section id="settings" className="mb-10">
                 <h2 className="text-2xl font-bold tracking-tight">Configuración</h2>
                 <div className="mt-4 rounded-lg border bg-card p-6">
                   <p className="text-muted-foreground">

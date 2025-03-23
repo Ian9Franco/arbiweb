@@ -109,10 +109,11 @@ interface ChartProps<T extends ChartDataPoint> {
   data: T[]
   x: (d: T) => string | number | Date
   y: (d: T) => string | number
+  series?: (d: T) => string // Añadir propiedad series como opcional
   children: React.ReactNode
 }
 
-export function Chart<T extends ChartDataPoint>({ data, x, y, children }: ChartProps<T>) {
+export function Chart<T extends ChartDataPoint>({ data, x, y, series, children }: ChartProps<T>) {
   return (
     <div className="relative">
       {React.Children.map(children, (child) => {
@@ -121,6 +122,7 @@ export function Chart<T extends ChartDataPoint>({ data, x, y, children }: ChartP
           data,
           x,
           y,
+          series,
         })
       })}
     </div>

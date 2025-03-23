@@ -25,18 +25,6 @@ interface ProfitChartProps {
   className?: string
 }
 
-// Tipo para los datos del tooltip
-interface TooltipData {
-  payload?: Array<{
-    value: number | string
-    payload: {
-      date: string
-      [key: string]: any
-    }
-  }>
-  active?: boolean
-}
-
 // Componente que muestra un gráfico de beneficios a lo largo del tiempo
 export function ProfitChart({ className }: ProfitChartProps) {
   // Estado para almacenar los datos de beneficios diarios
@@ -136,15 +124,17 @@ export function ProfitChart({ className }: ProfitChartProps) {
                 <YAxis tickFormatter={(value) => `$${value.toFixed(0)}`} />
                 {/* Tooltip personalizado para mostrar información al pasar el ratón */}
                 <Tooltip
-                  content={({ active, payload }: TooltipData) => {
+                  content={(props) => {
+                    const { active, payload } = props
                     if (active && payload && payload.length) {
+                      const data = payload[0].payload as DailyProfit
                       return (
                         <div className="rounded-lg border bg-background p-2 shadow-md">
                           <div className="flex flex-col gap-2">
                             <div className="flex items-center gap-2">
                               <div className="h-2 w-2 rounded-full bg-primary" />
                               <span className="text-sm text-muted-foreground">
-                                {new Date(payload[0].payload.date).toLocaleDateString()}
+                                {new Date(data.date).toLocaleDateString()}
                               </span>
                             </div>
                             <div className="text-left text-sm font-medium">
